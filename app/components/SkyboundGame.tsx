@@ -1,0 +1,82 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+
+const GAME_WIDTH = 800;
+const GAME_HEIGHT = 520;
+const PLAYER = {
+    x: 150,
+    y: 230,
+    width: 56,
+    height: 38,
+};
+
+export default function SkyboundGame() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+
+    if (!context) return;
+
+    const sky = context.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+    sky.addColorStop(0, '#7dd3fc');
+    sky.addColorStop(1, '#dcfce7');
+
+    context.fillStyle = sky;
+    context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    context.fillStyle = '#166534';
+    context.fillRect(0, GAME_HEIGHT - 72, GAME_WIDTH, 72);
+
+    context.fillStyle = '#14532d';
+
+    for (let x = 40; x < GAME_WIDTH; x += 110) {
+      context.beginPath();
+      context.moveTo(x, GAME_HEIGHT - 72);
+      context.lineTo(x + 36, GAME_HEIGHT - 190);
+      context.lineTo(x + 72, GAME_HEIGHT - 72);
+      context.fill();
+    }
+
+    context.fillStyle = '#f8fafc';
+    context.strokeStyle = '#334155';
+    context.lineWidth = 2;
+
+    // Gliders Orientation
+    context.beginPath();
+    context.moveTo(PLAYER.x, PLAYER.y);
+    context.lineTo(PLAYER.x + PLAYER.width, PLAYER.y + PLAYER.height / 2);
+    context.lineTo(PLAYER.x, PLAYER.y + PLAYER.height);
+    context.closePath();
+
+    context.fill();
+    context.stroke();
+  }, []);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-white">
+      <section className="w-full max-w-[800px]">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Skybound</h1>
+          <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
+            Score: 0
+          </p>
+        </div>
+
+        <canvas
+          ref={canvasRef}
+          width={GAME_WIDTH}
+          height={GAME_HEIGHT}
+          aria-label="Skybound game area"
+          className="h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
+        />
+
+        <p className="mt-4 text-center text-sm text-slate-300">
+          A forest flight awaits.
+        </p>
+      </section>
+    </main>
+  );
+}
