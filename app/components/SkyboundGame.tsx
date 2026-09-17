@@ -20,39 +20,83 @@ export default function SkyboundGame() {
 
     if (!context) return;
 
-    const sky = context.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-    sky.addColorStop(0, '#7dd3fc');
-    sky.addColorStop(1, '#dcfce7');
+    const player = { ...PLAYER, velocity: 0};
+    const GRAVITY = 0.12;
+    const FLAP_VELOCITY = -4.8;
 
-    context.fillStyle = sky;
-    context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const flap = () => {
+      player.velocity = FLAP_VELOCITY;
+    };
 
-    context.fillStyle = '#166534';
-    context.fillRect(0, GAME_HEIGHT - 72, GAME_WIDTH, 72);
+    let animationFrameId = 0;
 
-    context.fillStyle = '#14532d';
+    const handleKeyDown= (event: KeyboardEvent) => {
+      if (event.code !== 'Space') return;
 
-    for (let x = 40; x < GAME_WIDTH; x += 110) {
+      event.preventDefault();
+
+      if (event.repeat) return;
+
+      flap();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    const drawScene = () => {
+      context.clearRect(0,0, GAME_WIDTH, GAME_HEIGHT);
+
+      const sky = context.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+      sky.addColorStop(0, '#7dd3fc');
+      sky.addColorStop(1, '#dcfce7');
+
+      context.fillStyle = sky;
+      context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      context.fillStyle = '#166534';
+      context.fillRect(0, GAME_HEIGHT - 72, GAME_WIDTH, 72);
+
+      context.fillStyle = '#14532d';
+
+      for (let x = 40; x < GAME_WIDTH; x += 110) {
+        context.beginPath();
+        context.moveTo(x, GAME_HEIGHT - 72);
+        context.lineTo(x + 36, GAME_HEIGHT - 190);
+        context.lineTo(x + 72, GAME_HEIGHT - 72);
+        context.fill();
+      }
+
+      context.fillStyle = '#f8fafc';
+      context.strokeStyle = '#334155';
+      context.lineWidth = 2;
+
+      // Gliders Orientation
       context.beginPath();
-      context.moveTo(x, GAME_HEIGHT - 72);
-      context.lineTo(x + 36, GAME_HEIGHT - 190);
-      context.lineTo(x + 72, GAME_HEIGHT - 72);
+      context.moveTo(player.x, player.y);
+      context.lineTo(player.x + player.width, player.y + player.height / 2);
+      context.lineTo(player.x, player.y + player.height);
+      context.closePath();
+
       context.fill();
-    }
+      context.stroke();
 
-    context.fillStyle = '#f8fafc';
-    context.strokeStyle = '#334155';
-    context.lineWidth = 2;
+    };
 
-    // Gliders Orientation
-    context.beginPath();
-    context.moveTo(PLAYER.x, PLAYER.y);
-    context.lineTo(PLAYER.x + PLAYER.width, PLAYER.y + PLAYER.height / 2);
-    context.lineTo(PLAYER.x, PLAYER.y + PLAYER.height);
-    context.closePath();
+    const update = () => {
+      player.velocity += GRAVITY;
+      player.y += player.velocity;
 
-    context.fill();
-    context.stroke();
+      drawScene();
+      animationFrameId = window.requestAnimationFrame(update);
+    };
+
+    drawScene();
+    animationFrameId = window.requestAnimationFrame(update);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.cancelAnimationFrame(animationFrameId);
+    };
+
   }, []);
 
   return (
