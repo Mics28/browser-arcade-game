@@ -16,7 +16,10 @@ export default function SkyboundGame() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas?.getContext('2d');
+
+    if (!canvas) return;
+
+    const context = canvas.getContext('2d');
 
     if (!context) return;
 
@@ -41,6 +44,13 @@ export default function SkyboundGame() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
+
+    const handlePointerDown = (event: PointerEvent) => {
+      event.preventDefault();
+      flap();
+    };
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
 
     const drawScene = () => {
       context.clearRect(0,0, GAME_WIDTH, GAME_HEIGHT);
@@ -94,6 +104,7 @@ export default function SkyboundGame() {
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
       window.cancelAnimationFrame(animationFrameId);
     };
 
@@ -114,7 +125,7 @@ export default function SkyboundGame() {
           width={GAME_WIDTH}
           height={GAME_HEIGHT}
           aria-label="Skybound game area"
-          className="h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
+          className="touch-none h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
         />
 
         <p className="mt-4 text-center text-sm text-slate-300">
