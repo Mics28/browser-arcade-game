@@ -4,11 +4,21 @@ import { useEffect, useRef } from 'react';
 
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 520;
+const GROUND_HEIGHT = 72;
+const PLAYABLE_HEIGHT = GAME_HEIGHT - GROUND_HEIGHT;
+
+const PILLAR_PAIR = {
+  x: 560,
+  width: 72,
+  topHeight: 180,
+  gapHeight: 160,
+};
+
 const PLAYER = {
     x: 150,
     y: 230,
     width: 56,
-    height: 38,
+    height: 56,
 };
 
 export default function SkyboundGame() {
@@ -24,6 +34,15 @@ export default function SkyboundGame() {
     if (!context) return;
 
     const player = { ...PLAYER, velocity: 0};
+    const playerImage = new Image();
+    let isPlayerImageLoaded = false;
+    
+    playerImage.onload = () => {
+      isPlayerImageLoaded = true;
+    };
+
+    playerImage.src = '/mico-man.png';
+
     const GRAVITY = 0.12;
     const FLAP_VELOCITY = -4.8;
 
@@ -52,6 +71,7 @@ export default function SkyboundGame() {
 
     canvas.addEventListener('pointerdown', handlePointerDown);
 
+    // Draw the game scene
     const drawScene = () => {
       context.clearRect(0,0, GAME_WIDTH, GAME_HEIGHT);
 
@@ -63,32 +83,30 @@ export default function SkyboundGame() {
       context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
       context.fillStyle = '#166534';
-      context.fillRect(0, GAME_HEIGHT - 72, GAME_WIDTH, 72);
+      context.fillRect(0, GAME_HEIGHT - GROUND_HEIGHT, GAME_WIDTH, GROUND_HEIGHT);
 
       context.fillStyle = '#14532d';
 
       for (let x = 40; x < GAME_WIDTH; x += 110) {
         context.beginPath();
-        context.moveTo(x, GAME_HEIGHT - 72);
+        context.moveTo(x, GAME_HEIGHT - GROUND_HEIGHT);
         context.lineTo(x + 36, GAME_HEIGHT - 190);
-        context.lineTo(x + 72, GAME_HEIGHT - 72);
+        context.lineTo(x + 72, GAME_HEIGHT - GROUND_HEIGHT);
         context.fill();
       }
 
-      context.fillStyle = '#f8fafc';
-      context.strokeStyle = '#334155';
-      context.lineWidth = 2;
+      if (isPlayerImageLoaded) {
+        context.drawImage(playerImage, player.x, player.y, PLAYER.width, PLAYER.height);
+      }
+      
+      const bottomY = PILLAR_PAIR.topHeight + PILLAR_PAIR.gapHeight;
+      const bottomHeight = PLAYABLE_HEIGHT - bottomY;
+      
+      context.fillStyle = '#64748b';
+      context.fillRect(PILLAR_PAIR.x, 0, PILLAR_PAIR.width, PILLAR_PAIR.topHeight);
+      context.fillRect(PILLAR_PAIR.x, bottomY, PILLAR_PAIR.width, bottomHeight);
 
-      // Gliders Orientation
-      context.beginPath();
-      context.moveTo(player.x, player.y);
-      context.lineTo(player.x + player.width, player.y + player.height / 2);
-      context.lineTo(player.x, player.y + player.height);
-      context.closePath();
-
-      context.fill();
-      context.stroke();
-
+      
     };
 
     const update = () => {
