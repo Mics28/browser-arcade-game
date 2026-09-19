@@ -20,6 +20,36 @@ const PLAYER = {
     height: 56,
 };
 
+type BackgroundPalette = {
+  skyTop: string;
+  skyBottom: string;
+  trees: string;
+};
+
+function getBackgroundPalette(hour: number): BackgroundPalette {
+  if (hour >= 5 && hour < 12) {
+    return {
+      skyTop: '#7dd3fc',
+      skyBottom: '#fef3c7',
+      trees: '#166534',
+    };
+  }
+
+  if (hour >= 12 && hour < 18) {
+    return {
+      skyTop: '#fb923c',
+      skyBottom: '#fed7aa',
+      trees: '#7c2d12',
+    };
+  }
+
+  return {
+    skyTop: '#0f172a',
+    skyBottom: '#1e3a5f',
+    trees: '#020617',
+  };
+}
+
 export default function SkyboundGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -31,6 +61,8 @@ export default function SkyboundGame() {
     const context = canvas.getContext('2d');
 
     if (!context) return;
+
+    const palette = getBackgroundPalette(new Date().getHours());
 
     const player = { ...PLAYER, velocity: 0};
     const playerImage = new Image();
@@ -75,13 +107,13 @@ export default function SkyboundGame() {
       context.clearRect(0,0, GAME_WIDTH, GAME_HEIGHT);
 
       const sky = context.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-      sky.addColorStop(0, '#7dd3fc');
-      sky.addColorStop(1, '#dcfce7');
+      sky.addColorStop(0, palette.skyTop);
+      sky.addColorStop(1, palette.skyBottom);
 
       context.fillStyle = sky;
       context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-      context.fillStyle = '#14532d';
+      context.fillStyle = palette.trees;
 
       for (let x = 40; x < GAME_WIDTH; x += 110) {
         context.beginPath();
