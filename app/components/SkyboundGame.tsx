@@ -4,8 +4,7 @@ import { useEffect, useRef } from 'react';
 
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 520;
-const GROUND_HEIGHT = 72;
-const PLAYABLE_HEIGHT = GAME_HEIGHT - GROUND_HEIGHT;
+const PLAYABLE_HEIGHT = GAME_HEIGHT;
 
 const PILLAR_PAIR = {
   x: 560,
@@ -82,16 +81,13 @@ export default function SkyboundGame() {
       context.fillStyle = sky;
       context.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-      context.fillStyle = '#166534';
-      context.fillRect(0, GAME_HEIGHT - GROUND_HEIGHT, GAME_WIDTH, GROUND_HEIGHT);
-
       context.fillStyle = '#14532d';
 
       for (let x = 40; x < GAME_WIDTH; x += 110) {
         context.beginPath();
-        context.moveTo(x, GAME_HEIGHT - GROUND_HEIGHT);
+        context.moveTo(x, GAME_HEIGHT);
         context.lineTo(x + 36, GAME_HEIGHT - 190);
-        context.lineTo(x + 72, GAME_HEIGHT - GROUND_HEIGHT);
+        context.lineTo(x + 72, GAME_HEIGHT);
         context.fill();
       }
 
