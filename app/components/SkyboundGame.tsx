@@ -65,6 +65,10 @@ export default function SkyboundGame() {
     const palette = getBackgroundPalette(new Date().getHours());
 
     const player = { ...PLAYER, velocity: 0};
+
+    const pillarPairs = [{ ...PILLAR_PAIR}];
+    const PILLAR_SPEED = 2.5;
+
     const playerImage = new Image();
     let isPlayerImageLoaded = false;
     
@@ -127,19 +131,23 @@ export default function SkyboundGame() {
         context.drawImage(playerImage, player.x, player.y, PLAYER.width, PLAYER.height);
       }
       
-      const bottomY = PILLAR_PAIR.topHeight + PILLAR_PAIR.gapHeight;
-      const bottomHeight = PLAYABLE_HEIGHT - bottomY;
-      
-      context.fillStyle = '#64748b';
-      context.fillRect(PILLAR_PAIR.x, 0, PILLAR_PAIR.width, PILLAR_PAIR.topHeight);
-      context.fillRect(PILLAR_PAIR.x, bottomY, PILLAR_PAIR.width, bottomHeight);
+      for (const pillarPair of pillarPairs) {
+        const bottomY = pillarPair.topHeight + pillarPair.gapHeight;
+        const bottomHeight = PLAYABLE_HEIGHT - bottomY;
 
-      
+        context.fillRect(pillarPair.x, 0, pillarPair.width, pillarPair.topHeight);
+        context.fillRect(pillarPair.x, bottomY, pillarPair.width, bottomHeight);
+      }
+
     };
 
     const update = () => {
       player.velocity += GRAVITY;
       player.y += player.velocity;
+
+      for (const pillarPair of pillarPairs) {
+        pillarPair.x -= PILLAR_SPEED;
+      }
 
       drawScene();
       animationFrameId = window.requestAnimationFrame(update);
