@@ -6,12 +6,17 @@ const GAME_WIDTH = 800;
 const GAME_HEIGHT = 520;
 const PLAYABLE_HEIGHT = GAME_HEIGHT;
 
-const PILLAR_PAIR = {
-  x: 560,
-  width: 72,
-  topHeight: 180,
-  gapHeight: 160,
+type PillarPair = {
+  x: number;
+  width: number;
+  topHeight: number;
+  gapHeight: number;
 };
+
+const PILLAR_WIDTH = 72;
+const GAP_HEIGHT = 160;
+const MIN_PILLAR_HEIGHT = 70;
+
 
 const PLAYER = {
     x: 150,
@@ -66,7 +71,25 @@ export default function SkyboundGame() {
 
     const player = { ...PLAYER, velocity: 0};
 
-    const pillarPairs = [{ ...PILLAR_PAIR}];
+    const createPillarPair = (x: number): PillarPair => {
+      const maxTopHeight =
+      PLAYABLE_HEIGHT - GAP_HEIGHT - MIN_PILLAR_HEIGHT;
+      
+      // Scale Math.random() (0–1) into our allowed pillar-height range.
+      const topHeight =
+        Math.floor(
+          Math.random() * (maxTopHeight - MIN_PILLAR_HEIGHT + 1)
+        ) + MIN_PILLAR_HEIGHT;
+
+        return {
+          x,
+          width: PILLAR_WIDTH,
+          topHeight,
+          gapHeight: GAP_HEIGHT,
+        };
+    };
+
+    const pillarPairs = [createPillarPair(GAME_WIDTH + 40)];
     const PILLAR_SPEED = 2.5;
 
     const playerImage = new Image();
