@@ -152,13 +152,11 @@ export default function SkyboundGame() {
         };
     };
 
-    // Create the first pillar pair outside the visible Canvas. 
-    // The game will move it left until it enters the playfield.
-    const pillarPairs = [createPillarPair(GAME_WIDTH + 40)];
-
-    // Horizontal speed at which the pillars move toward the player.
     const PILLAR_SPEED = 2.5;
+    const PILLAR_SPAWN_X = GAME_WIDTH + 40;
+    const PILLAR_SPACING = 300;
 
+    const pillarPairs = [createPillarPair(PILLAR_SPAWN_X)];
 
     // -------------------------------------------------- 
     // PLAYER IMAGE 
@@ -311,6 +309,23 @@ export default function SkyboundGame() {
       // Move every pillar pair from right to left.
       for (const pillarPair of pillarPairs) {
         pillarPair.x -= PILLAR_SPEED;
+      }
+
+      const lastPillarPair = pillarPairs[pillarPairs.length - 1];
+      // If the last pillar pair has moved far enough left, spawn a new one.
+      if (
+        lastPillarPair &&
+        lastPillarPair.x <= PILLAR_SPAWN_X - PILLAR_SPACING
+      ) {
+        pillarPairs.push(createPillarPair(PILLAR_SPAWN_X));
+      }
+
+      for (let index = pillarPairs.length - 1; index >= 0; index -= 1) {
+        const pillarPair = pillarPairs[index];
+
+        if (pillarPair.x + pillarPair.width < 0) {
+          pillarPairs.splice(index, 1);
+        }
       }
 
       // Render the updated game state.
