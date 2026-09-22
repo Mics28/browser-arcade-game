@@ -152,10 +152,12 @@ export default function SkyboundGame() {
         };
     };
 
+    // Controls pillar movement, spawn position, and horizontal spacing.
     const PILLAR_SPEED = 2.5;
     const PILLAR_SPAWN_X = GAME_WIDTH + 40;
     const PILLAR_SPACING = 300;
 
+    // Start the game with one pillar pair just outside the right edge.
     const pillarPairs = [createPillarPair(PILLAR_SPAWN_X)];
 
     // -------------------------------------------------- 
@@ -215,6 +217,47 @@ export default function SkyboundGame() {
 
       // Apply the flap physics.
       flap();
+    };
+
+    const rectanglesOverlap = (
+      first: { x: number; y: number; width: number; height: number},
+      second: { x: number; y: number; width: number; height: number}
+    ) => {
+      return (
+        first.x < second.x + second.width &&
+        first.x + first.width > second.x &&
+        first.y < second.y + second.height &&
+        first.y + first.height > second.y
+      );
+    };
+
+    const hasCollision = () => {
+      const hitBoundary =
+        player.y < 0 ||
+        player.y + player.height > PLAYABLE_HEIGHT;
+
+      const hitPillar = pillarPairs.some((pillarPair) => {
+        const bottomY = pillarPair.topHeight + pillarPair.gapHeight;
+        const bottomHeight = PLAYABLE_HEIGHT - bottomY;
+
+        const hitTopPillar = rectanglesOverlap(player, {
+          x: pillarPair.x,
+          y: 0,
+          width: pillarPair.width,
+          height: pillarPair.topHeight,
+        });
+
+        const hitBottomPillar = rectanglesOverlap(player, {
+          x: pillarPair.x,
+          y: bottomY,
+          width: pillarPair.width,
+          height: bottomHeight,
+        });
+
+        return hitTopPillar || hitBottomPillar;
+      });
+
+      return hitBoundary || hitPillar;
     };
 
     // Listen for keyboard input while the game is active.
@@ -311,21 +354,28 @@ export default function SkyboundGame() {
         pillarPair.x -= PILLAR_SPEED;
       }
 
+      // Check the newest pillar to determine when the next pillar should spawn.
       const lastPillarPair = pillarPairs[pillarPairs.length - 1];
       // If the last pillar pair has moved far enough left, spawn a new one.
       if (
         lastPillarPair &&
         lastPillarPair.x <= PILLAR_SPAWN_X - PILLAR_SPACING
       ) {
+         // Add a new pillar outside the right edge while keeping existing pillars active.
         pillarPairs.push(createPillarPair(PILLAR_SPAWN_X));
       }
 
+      // Remove pillars only after they are completely outside the left edge.
       for (let index = pillarPairs.length - 1; index >= 0; index -= 1) {
         const pillarPair = pillarPairs[index];
 
         if (pillarPair.x + pillarPair.width < 0) {
           pillarPairs.splice(index, 1);
         }
+      }
+
+      if (hasCollision()) {
+        console.log('Collision Detected');
       }
 
       // Render the updated game state.
