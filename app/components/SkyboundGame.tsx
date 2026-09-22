@@ -26,6 +26,7 @@ type PillarPair = {
   width: number;
   topHeight: number;
   gapHeight: number;
+  passed: boolean;
 };
 
 // Pillar generation constants. 
@@ -149,6 +150,7 @@ export default function SkyboundGame() {
           width: PILLAR_WIDTH,
           topHeight,
           gapHeight: GAP_HEIGHT,
+          passed: false
         };
     };
 
@@ -159,6 +161,7 @@ export default function SkyboundGame() {
 
     // Start the game with one pillar pair just outside the right edge.
     const pillarPairs = [createPillarPair(PILLAR_SPAWN_X)];
+    let score = 0;
 
     // -------------------------------------------------- 
     // PLAYER IMAGE 
@@ -376,6 +379,17 @@ export default function SkyboundGame() {
 
       if (hasCollision()) {
         console.log('Collision Detected');
+      }
+
+      for (const pillarPair of pillarPairs) {
+        const hasPassedPlayer =
+          pillarPair.x + pillarPair.width < player.x;
+
+          if (!pillarPair.passed && hasPassedPlayer) {
+            pillarPair.passed = true;
+            score += 1;
+            console.log(`Score: ${score}`);
+          }
       }
 
       // Render the updated game state.
