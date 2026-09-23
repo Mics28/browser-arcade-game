@@ -32,8 +32,11 @@ type PillarPair = {
 // Pillar generation constants. 
 // These control the width, gap, and minimum allowed pillar height.
 const PILLAR_WIDTH = 72;
-const GAP_HEIGHT = 160;
+const BASE_GAP_HEIGHT = 160;
+const MIN_GAP_HEIGHT = 120;
+const GAP_DECREASE = 4;
 const MIN_PILLAR_HEIGHT = 70;
+const MAX_GAP_VERTICAL_SHIFT = 100;
 
 // -------------------------------------------------- 
 // PLAYER CONFIGURATION 
@@ -125,43 +128,81 @@ export default function SkyboundGame() {
 
     // Creates one pillar pair at the supplied x-coordinate. 
     // The function returns data that follows the PillarPair TypeScript type.
-    const createPillarPair = (x: number): PillarPair => {
-
-      // Calculate the maximum possible top-pillar height. 
-      // This leaves enough room for both the required gap 
-      // and the minimum bottom-pillar height.
-      const maxTopHeight =
-      PLAYABLE_HEIGHT - GAP_HEIGHT - MIN_PILLAR_HEIGHT;
-
-      // Generate a random whole-number height between 
-      // MIN_PILLAR_HEIGHT and maxTopHeight. 
-      // Math.random() gives 0–less-than-1. 
-      // Math.floor() converts the scaled result to an integer. 
-      // + MIN_PILLAR_HEIGHT shifts the range upward.
-      const topHeight =
-        Math.floor(
-          Math.random() * (maxTopHeight - MIN_PILLAR_HEIGHT + 1)
-        ) + MIN_PILLAR_HEIGHT;
-
-
-        // Return the complete pillar-pair data.
-        return {
-          x,
-          width: PILLAR_WIDTH,
-          topHeight,
-          gapHeight: GAP_HEIGHT,
-          passed: false
-        };
-    };
-
-    // Controls pillar movement, spawn position, and horizontal spacing.
-    const PILLAR_SPEED = 2.5;
+    const BASE_PILLAR_SPEED = 2.5;
+    const MAX_PILLAR_SPEED = 4.5;
+    const SPEED_INCREASE = 0.15;
     const PILLAR_SPAWN_X = GAME_WIDTH + 40;
     const PILLAR_SPACING = 300;
 
-    // Start the game with one pillar pair just outside the right edge.
-    const pillarPairs = [createPillarPair(PILLAR_SPAWN_X)];
     let score = 0;
+
+    const getDifficulty = () => {
+      const pillarSpeed = Math.min(
+        MAX_PILLAR_SPEED,
+        BASE_PILLAR_SPEED + score * SPEED_INCREASE
+      );
+
+      const gapHeight = Math.max(
+        MIN_GAP_HEIGHT,
+        BASE_GAP_HEIGHT - score * GAP_DECREASE
+      );
+
+      return { pillarSpeed, gapHeight };
+    };
+
+    const createPillarPair = (
+      x: number,
+      previousTopHeight?: number
+    ): PillarPair => {
+      const { gapHeight } = getDifficulty();
+
+      // Calculate the absolute highest top-pillar height allowed by the game geometry.
+      // This guarantees that the bottom pillar still has at least MIN_PILLAR_HEIGHT.
+      const maximumAllowedTopHeight =
+        PLAYABLE_HEIGHT - gapHeight - MIN_PILLAR_HEIGHT;
+
+      // Calculate the lowest allowed top-pillar height for the next pillar.
+      // If this is the first pillar, start at the absolute minimum.
+      // Otherwise, don't allow the next gap to move downward by more than
+      // MAX_GAP_VERTICAL_SHIFT from the previous gap position.
+      const minimumTopHeight =
+        previousTopHeight === undefined
+          ? MIN_PILLAR_HEIGHT
+          : Math.max(
+              MIN_PILLAR_HEIGHT,
+              previousTopHeight - MAX_GAP_VERTICAL_SHIFT
+            );
+
+      // Calculate the highest allowed top-pillar height for the next pillar.
+      // If this is the first pillar, use the absolute maximum allowed height.
+      // Otherwise, don't allow the next gap to move upward by more than
+      // MAX_GAP_VERTICAL_SHIFT from the previous gap position.
+      const maximumTopHeight =
+        previousTopHeight === undefined
+            ? maximumAllowedTopHeight
+            : Math.min(
+              maximumAllowedTopHeight,
+              previousTopHeight + MAX_GAP_VERTICAL_SHIFT
+            );
+
+      // Choose a random whole-number top-pillar height
+      // between the calculated minimum and maximum, inclusive.
+      const topHeight =
+        Math.floor(
+          Math.random() * (maximumTopHeight - minimumTopHeight + 1)
+        ) + minimumTopHeight;
+
+      return {
+        x,
+        width: PILLAR_WIDTH,
+        topHeight,
+        gapHeight,
+        passed: false,
+      };
+    };
+
+    const pillarPairs = [createPillarPair(PILLAR_SPAWN_X)];
+
 
     // -------------------------------------------------- 
     // PLAYER IMAGE 
@@ -353,8 +394,10 @@ export default function SkyboundGame() {
       player.y += player.velocity;
 
       // Move every pillar pair from right to left.
+      const { pillarSpeed } = getDifficulty();
+
       for (const pillarPair of pillarPairs) {
-        pillarPair.x -= PILLAR_SPEED;
+        pillarPair.x -= pillarSpeed;
       }
 
       // Check the newest pillar to determine when the next pillar should spawn.
@@ -365,7 +408,9 @@ export default function SkyboundGame() {
         lastPillarPair.x <= PILLAR_SPAWN_X - PILLAR_SPACING
       ) {
          // Add a new pillar outside the right edge while keeping existing pillars active.
-        pillarPairs.push(createPillarPair(PILLAR_SPAWN_X));
+        pillarPairs.push(
+          createPillarPair(PILLAR_SPAWN_X, lastPillarPair.topHeight)
+        );
       }
 
       // Remove pillars only after they are completely outside the left edge.
