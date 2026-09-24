@@ -37,6 +37,8 @@ const GAP_DECREASE = 4;
 const MIN_PILLAR_HEIGHT = 70;
 const MAX_GAP_VERTICAL_SHIFT = 100;
 
+const BEST_SCORE_STORAGE_KEY = 'skybound-best-score';
+
 // -------------------------------------------------- 
 // PLAYER CONFIGURATION 
 // --------------------------------------------------
@@ -108,6 +110,8 @@ export default function SkyboundGame() {
 
   const [finalScore, setFinalScore] = useState(0);
   const [displayScore, setDisplayScore] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
+  const bestScoreRef = useRef(0);
   const resetGameRef = useRef<() => void>(() => {});
 
   const retryGame = () => {
@@ -131,7 +135,21 @@ export default function SkyboundGame() {
 
   // Runs the Canvas game setup after the component has mounted.
   useEffect(() => {
-    // Get the Canvas element from the React ref.
+    const savedBestScore = window.localStorage.getItem(
+      BEST_SCORE_STORAGE_KEY
+    );
+
+    const parsedBestScore = Number(savedBestScore);
+
+    if (Number.isInteger(parsedBestScore) && parsedBestScore >= 0) {
+      bestScoreRef.current = parsedBestScore;
+      setBestScore(parsedBestScore);
+    }
+
+  }, []);
+
+  // Get the Canvas element from the React ref.
+  useEffect(() => {
     const canvas = canvasRef.current;
 
     // Stop setup if the Canvas element does not exist.
@@ -163,6 +181,8 @@ export default function SkyboundGame() {
     const SPEED_INCREASE = 0.15;
     const PILLAR_SPAWN_X = GAME_WIDTH + 40;
     const PILLAR_SPACING = 300;
+
+    const BEST_SCORE_STORAGE_KEY = 'skybound-best-score'
 
     let score = 0;
 
@@ -295,7 +315,21 @@ export default function SkyboundGame() {
     };
 
     resetGameRef.current = resetGame;
-    
+
+    const updateBestScore = () => {
+      const nextBestScore = Math.max(bestScoreRef.current, score);
+
+      if (nextBestScore > bestScoreRef.current) {
+        bestScoreRef.current = nextBestScore;
+        setBestScore(nextBestScore);
+        window.localStorage.setItem(
+          BEST_SCORE_STORAGE_KEY,
+          String(nextBestScore)
+        );
+      
+      }
+    };
+
     // Stores the ID of the browser's animation loop. 
     // It is used later to stop the loop during cleanup.
     let animationFrameId = 0;
@@ -484,6 +518,7 @@ export default function SkyboundGame() {
         if (hasCollision()) {
           gameStateRef.current = 'GAME_OVER';
           setFinalScore(score);
+          updateBestScore();
           setGameState('GAME_OVER');
         } else {
           const lastPillarPair = pillarPairs[pillarPairs.length - 1];
@@ -553,9 +588,14 @@ export default function SkyboundGame() {
       <section className="w-full max-w-[800px]">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Skybound</h1>
-          <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
-            Score: {displayScore}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
+              Best: {bestScore}
+            </p>
+            <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
+              Score: {displayScore}
+            </p>
+          </div>
         </div>
 
           <div className="relative">
