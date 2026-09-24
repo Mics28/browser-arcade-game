@@ -82,6 +82,9 @@ type BackgroundPalette = {
   skyTop: string;
   skyBottom: string;
   trees: string;
+  distantHills: string;
+  nearHills: string;
+  mist: string;
 };
 
 function getBackgroundPalette(hour: number): BackgroundPalette {
@@ -90,6 +93,9 @@ function getBackgroundPalette(hour: number): BackgroundPalette {
       skyTop: '#7dd3fc',
       skyBottom: '#fef3c7',
       trees: '#166534',
+      distantHills: '#bbf7d0',
+      nearHills: '#4d7c0f',
+      mist: 'rgba(255, 255, 255, 0.32)',
     };
   }
 
@@ -98,6 +104,9 @@ function getBackgroundPalette(hour: number): BackgroundPalette {
       skyTop: '#fb923c',
       skyBottom: '#fed7aa',
       trees: '#7c2d12',
+      distantHills: '#fdba74',
+      nearHills: '#9a3412',
+      mist: 'rgba(255, 237, 213, 0.28)',
     };
   }
 
@@ -105,6 +114,9 @@ function getBackgroundPalette(hour: number): BackgroundPalette {
     skyTop: '#0f172a',
     skyBottom: '#1e3a5f',
     trees: '#020617',
+    distantHills: '#1e3a5f',
+    nearHills: '#172554',
+    mist: 'rgba(191, 219, 254, 0.12)',
   };
 }
 
@@ -507,6 +519,35 @@ export default function SkyboundGame() {
         GAME_WIDTH,
         GAME_HEIGHT
       );
+
+      context.fillStyle = palette.distantHills;
+      context.beginPath();
+      context.moveTo(0, GAME_HEIGHT);
+      context.lineTo(0, 350);
+      context.quadraticCurveTo(150, 260, 300, 350);
+      context.quadraticCurveTo(470, 230, 650, 350);
+      context.quadraticCurveTo(730, 300, GAME_WIDTH, 340);
+      context.lineTo(GAME_WIDTH, GAME_HEIGHT);
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = palette.nearHills;
+      context.beginPath();
+      context.moveTo(0, GAME_HEIGHT);
+      context.lineTo(0, 410);
+      context.quadraticCurveTo(160, 320, 330, 410);
+      context.quadraticCurveTo(500, 300, 670, 420);
+      context.quadraticCurveTo(740, 360, GAME_WIDTH, 400);
+      context.lineTo(GAME_WIDTH, GAME_HEIGHT);
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = palette.mist;
+      for (let x = -80; x < GAME_WIDTH; x += 180) {
+        context.beginPath();
+        context.ellipse(x, 400, 130, 24, 0, 0, Math.PI * 2);
+        context.fill();
+      }
 
       context.fillStyle = palette.trees;
 
