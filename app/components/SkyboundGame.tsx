@@ -42,6 +42,20 @@ const PILLAR_SPACING = 300;
 // Persistent browser storage key for the best score.
 const BEST_SCORE_STORAGE_KEY = 'skybound-best-score';
 
+function readStoredBestScore(): number {
+  if (typeof window === 'undefined') return 0;
+
+  const savedBestScore = window.localStorage.getItem(
+    BEST_SCORE_STORAGE_KEY
+  );
+
+  const parsedBestScore = Number(savedBestScore);
+
+  return Number.isInteger(parsedBestScore) && parsedBestScore >= 0
+    ? parsedBestScore
+    : 0;
+}
+
 // --------------------------------------------------
 // PLAYER CONFIGURATION
 // --------------------------------------------------
@@ -114,7 +128,7 @@ export default function SkyboundGame() {
   // Refs provide current values/functions to the long-running Canvas game loop
   // without requiring the loop to be recreated whenever React state changes.
   const gameStateRef = useRef<GameState>('START');
-  const bestScoreRef = useRef(0);
+  const bestScoreRef = useRef(bestScore);
   const resetGameRef = useRef<() => void>(() => {});
   const startWithFlapRef = useRef<() => void>(() => {});
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,19 +151,14 @@ export default function SkyboundGame() {
   // LOAD PERSISTENT BEST SCORE
   // --------------------------------------------------
 
-  // localStorage only exists in the browser, so the saved best score is
-  // loaded after the component mounts on the client.
   useEffect(() => {
-    const savedBestScore = window.localStorage.getItem(
-      BEST_SCORE_STORAGE_KEY
-    );
+    const storedBestScore = readStoredBestScore();
 
-    const parsedBestScore = Number(savedBestScore);
+    bestScoreRef.current = storedBestScore;
 
-    if (Number.isInteger(parsedBestScore) && parsedBestScore >= 0) {
-      bestScoreRef.current = parsedBestScore;
-      setBestScore(parsedBestScore);
-    }
+    window.requestAnimationFrame(() => {
+      setBestScore(storedBestScore);
+    });
   }, []);
 
   // --------------------------------------------------
