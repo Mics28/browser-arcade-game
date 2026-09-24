@@ -1,12 +1,11 @@
 'use client';
 
 // React hooks used to access the Canvas element and run the game setup once.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // -------------------------------------------------- 
 // GAME CONFIGURATION 
 // --------------------------------------------------
-
 
 // Fixed dimensions used as the game's internal coordinate system.
 const GAME_WIDTH = 800;
@@ -88,12 +87,35 @@ function getBackgroundPalette(hour: number): BackgroundPalette {
   };
 }
 
+type GameState = 'START' | 'PLAYING' | 'GAME_OVER';
+
 // -------------------------------------------------- 
 // MAIN GAME COMPONENT 
 // --------------------------------------------------
 
 
 export default function SkyboundGame() {
+
+  const [gameState, setGameState] = useState<GameState>('START');
+  const gameStateRef = useRef<GameState>('START');
+
+  const [finalScore, setFinalScore] = useState(0);
+  const resetGameRef = useRef<() => void>(() => {});
+
+  const retryGame = () => {
+    resetGameRef.current();
+  };
+
+  const startWithFlapRef = useRef<() => void>(() => {});
+
+  const startFromInput = () => {
+    startWithFlapRef.current();
+  };
+
+  const startGameFromButton = () => {
+    gameStateRef.current = 'PLAYING';
+    setGameState('PLAYING');
+  };
 
   // Holds a reference to the actual HTML Canvas element. 
   // useRef lets the game access the Canvas without causing React re-renders.
@@ -227,10 +249,18 @@ export default function SkyboundGame() {
     // --------------------------------------------------
 
     // Gravity increases the player's downward velocity every frame.
-    const GRAVITY = 0.12;
+    const GRAVITY = 0.11; //0.12 original gravity
 
     // Negative velocity moves the player upward when they flap.
-    const FLAP_VELOCITY = -4.8;
+    const FLAP_VELOCITY = -3.5; // -4.8 original velocity
+
+    const startGameWithFlap = () =>  {
+      gameStateRef.current = 'PLAYING';
+      setGameState('PLAYING');
+      flap();
+    };
+
+    startWithFlapRef.current = startGameWithFlap;
 
     // Applies an upward velocity to the player. 
     // The player does not teleport upward; physics moves them over time.
@@ -238,6 +268,24 @@ export default function SkyboundGame() {
       player.velocity = FLAP_VELOCITY;
     };
 
+    const resetGame = () => {
+      player.x = PLAYER.x;
+      player.y = PLAYER.y;
+      player.velocity = 0;
+
+      pillarPairs.splice(
+        0,
+        pillarPairs.length,
+        createPillarPair(PILLAR_SPAWN_X)
+      );
+      
+      score = 0;
+      gameStateRef.current = 'START';
+      setGameState('START');
+    };
+
+    resetGameRef.current = resetGame;
+    
     // Stores the ID of the browser's animation loop. 
     // It is used later to stop the loop during cleanup.
     let animationFrameId = 0;
@@ -259,7 +307,13 @@ export default function SkyboundGame() {
       // Ignore repeated keydown events when Space is held down.
       if (event.repeat) return;
 
-      // Apply the flap physics.
+      if (gameStateRef.current === 'START') {
+        startGameWithFlap();
+        return;
+      }
+
+      if (gameStateRef.current !== 'PLAYING') return;
+
       flap();
     };
 
@@ -317,7 +371,13 @@ export default function SkyboundGame() {
       // Prevent the browser from performing its default pointer behavior.
       event.preventDefault();
 
-      // Apply the same flap action used by the keyboard.
+      if (gameStateRef.current === 'START') {
+        startGameWithFlap();
+        return;
+      }
+
+      if (gameStateRef.current !== 'PLAYING') return;
+
       flap();
     };
 
@@ -388,53 +448,54 @@ export default function SkyboundGame() {
 
     // Updates the game's state and then renders the next frame.
     const update = () => {
-      // Apply gravity by increasing the player's downward velocity.
-      player.velocity += GRAVITY;
-      // Move the player according to their current velocity.
-      player.y += player.velocity;
+      if (gameStateRef.current === 'PLAYING') {
+          // Apply gravity by increasing the player's downward velocity.
+        player.velocity += GRAVITY;
+        // Move the player according to their current velocity.
+        player.y += player.velocity;
 
-      // Move every pillar pair from right to left.
-      const { pillarSpeed } = getDifficulty();
+        // Move every pillar pair from right to left.
+        const { pillarSpeed } = getDifficulty();
 
-      for (const pillarPair of pillarPairs) {
-        pillarPair.x -= pillarSpeed;
-      }
-
-      // Check the newest pillar to determine when the next pillar should spawn.
-      const lastPillarPair = pillarPairs[pillarPairs.length - 1];
-      // If the last pillar pair has moved far enough left, spawn a new one.
-      if (
-        lastPillarPair &&
-        lastPillarPair.x <= PILLAR_SPAWN_X - PILLAR_SPACING
-      ) {
-         // Add a new pillar outside the right edge while keeping existing pillars active.
-        pillarPairs.push(
-          createPillarPair(PILLAR_SPAWN_X, lastPillarPair.topHeight)
-        );
-      }
-
-      // Remove pillars only after they are completely outside the left edge.
-      for (let index = pillarPairs.length - 1; index >= 0; index -= 1) {
-        const pillarPair = pillarPairs[index];
-
-        if (pillarPair.x + pillarPair.width < 0) {
-          pillarPairs.splice(index, 1);
+        for (const pillarPair of pillarPairs) {
+          pillarPair.x -= pillarSpeed;
         }
-      }
 
-      if (hasCollision()) {
-        console.log('Collision Detected');
-      }
+        if (hasCollision()) {
+          gameStateRef.current = 'GAME_OVER';
+          setFinalScore(score);
+          setGameState('GAME_OVER');
+        } else {
+          const lastPillarPair = pillarPairs[pillarPairs.length - 1];
 
-      for (const pillarPair of pillarPairs) {
-        const hasPassedPlayer =
-          pillarPair.x + pillarPair.width < player.x;
-
-          if (!pillarPair.passed && hasPassedPlayer) {
-            pillarPair.passed = true;
-            score += 1;
-            console.log(`Score: ${score}`);
+          if (
+            lastPillarPair &&
+            lastPillarPair.x <= PILLAR_SPAWN_X - PILLAR_SPACING 
+          ) {
+            pillarPairs.push(
+              createPillarPair(PILLAR_SPAWN_X, lastPillarPair.topHeight)
+            );
           }
+
+          for (let index = pillarPairs.length - 1; index >= 0; index -= 1) {
+            const pillarPair = pillarPairs[index];
+
+            if (pillarPair.x + pillarPair.width < 0) {
+              pillarPairs.splice(index, 1);
+            }
+          }
+
+          for (const pillarPair of pillarPairs) {
+            const hasPassedPlayer =
+            pillarPair.x + pillarPair.width < player.x;
+
+            if (!pillarPair.passed && hasPassedPlayer) {
+              pillarPair.passed = true;
+              score += 1;
+              console.log(`Score: ${score}`);
+            }
+          }
+        }
       }
 
       // Render the updated game state.
@@ -455,6 +516,8 @@ export default function SkyboundGame() {
       window.removeEventListener('keydown', handleKeyDown);
       canvas.removeEventListener('pointerdown', handlePointerDown);
       window.cancelAnimationFrame(animationFrameId);
+      startWithFlapRef.current = () => {};
+      resetGameRef.current = () => {};
     };
 
   }, []);
@@ -467,20 +530,54 @@ export default function SkyboundGame() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-white">
       <section className="w-full max-w-[800px]">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Skybound</h1>
-          <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
-            Score: 0
-          </p>
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={GAME_WIDTH}
+            height={GAME_HEIGHT}
+            aria-label="Skybound game area"
+            className="touch-none h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
+          />
+
+          {gameState === 'START' && (
+            <div
+              onPointerDown={startFromInput}
+              className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/55 text-center"
+            >
+              <h2 className="text-3xl font-bold">Ready for takeoff?</h2>
+              <p className="mt-2 text-slate-200">
+                Guide Mico through the stone pillars.
+              </p>
+              <button
+                type="button"
+                onClick={startGameFromButton}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="mt-6 rounded-full bg-emerald-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-400"
+              >
+                Start flight
+              </button>
+            </div>
+          )}
+
+          {gameState === 'GAME_OVER' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 text-center">
+              <h2 className="text-3xl font-bold">Flight ended</h2>
+              <p className="mt-3 text-xl text-slate-100">
+                Score: {finalScore}
+              </p>
+              <button
+                type="button"
+                onClick={retryGame}
+                className="mt-6 rounded-full bg-amber-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-amber-300"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
         </div>
 
-        <canvas
-          ref={canvasRef}
-          width={GAME_WIDTH}
-          height={GAME_HEIGHT}
-          aria-label="Skybound game area"
-          className="touch-none h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
-        />
+        
 
         <p className="mt-4 text-center text-sm text-slate-300">
           A forest flight awaits.
