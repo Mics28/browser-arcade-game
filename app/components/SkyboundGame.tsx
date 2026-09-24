@@ -107,6 +107,7 @@ export default function SkyboundGame() {
   const gameStateRef = useRef<GameState>('START');
 
   const [finalScore, setFinalScore] = useState(0);
+  const [displayScore, setDisplayScore] = useState(0);
   const resetGameRef = useRef<() => void>(() => {});
 
   const retryGame = () => {
@@ -287,6 +288,8 @@ export default function SkyboundGame() {
       );
       
       score = 0;
+      setDisplayScore(0);
+
       gameStateRef.current = 'START';
       setGameState('START');
     };
@@ -509,6 +512,7 @@ export default function SkyboundGame() {
             if (!pillarPair.passed && hasPassedPlayer) {
               pillarPair.passed = true;
               score += 1;
+              setDisplayScore(score);
               console.log(`Score: ${score}`);
             }
           }
@@ -547,55 +551,61 @@ export default function SkyboundGame() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-white">
       <section className="w-full max-w-[800px]">
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={GAME_WIDTH}
-            height={GAME_HEIGHT}
-            aria-label="Skybound game area"
-            className="touch-none h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
-          />
-
-          {gameState === 'START' && (
-            <div
-              onPointerDown={startFromInput}
-              className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/55 text-center"
-            >
-              <h2 className="text-3xl font-bold">Ready for takeoff?</h2>
-              <p className="mt-2 text-slate-200">
-                Guide Mico through the stone pillars.
-              </p>
-              <button
-                type="button"
-                onClick={startGameFromButton}
-                onPointerDown={(event) => event.stopPropagation()}
-                className="mt-6 rounded-full bg-emerald-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-400"
-              >
-                Start flight
-              </button>
-            </div>
-          )}
-
-          {gameState === 'GAME_OVER' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 text-center">
-              <h2 className="text-3xl font-bold">Flight ended</h2>
-              <p className="mt-3 text-xl text-slate-100">
-                Score: {finalScore}
-              </p>
-              <button
-                type="button"
-                onClick={retryGame}
-                className="mt-6 rounded-full bg-amber-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-amber-300"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Skybound</h1>
+          <p className="rounded-full bg-white/10 px-4 py-2 font-semibold">
+            Score: {displayScore}
+          </p>
         </div>
 
-        
+          <div className="relative">
+            <canvas
+              ref={canvasRef}
+              width={GAME_WIDTH}
+              height={GAME_HEIGHT}
+              aria-label="Skybound game area"
+              className="touch-none h-auto w-full rounded-2xl border-4 border-emerald-900 shadow-2xl"
+            />
 
+            {gameState === 'START' && (
+              <div
+                onPointerDown={startFromInput}
+                className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/55 text-center"
+              >
+                <h2 className="text-3xl font-bold">Ready for takeoff?</h2>
+                <p className="mt-2 text-slate-200">
+                  Guide Mico through the stone pillars.
+                </p>
+                <button
+                  type="button"
+                  onClick={startGameFromButton}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="mt-6 rounded-full bg-emerald-500 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-400"
+                >
+                  Start flight
+                </button>
+              </div>
+            )}
+
+            {gameState === 'GAME_OVER' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 text-center">
+                <h2 className="text-3xl font-bold">Flight ended</h2>
+                <p className="mt-3 text-xl text-slate-100">
+                  Score: {finalScore}
+                </p>
+                <button
+                  type="button"
+                  onClick={retryGame}
+                  className="mt-6 rounded-full bg-amber-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-amber-300"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+          </div>
+
+      
         <p className="mt-4 text-center text-sm text-slate-300">
           A forest flight awaits.
         </p>
