@@ -50,6 +50,13 @@ const PLAYER = {
     height: 56,
 };
 
+const PLAYER_HITBOX = {
+  offsetX: 12,
+  offsetY: 4,
+  width: 32,
+  height: 49,
+};
+
 
 // -------------------------------------------------- 
 // BACKGROUND CONFIGURATION 
@@ -329,23 +336,33 @@ export default function SkyboundGame() {
       );
     };
 
+    const getPlayerHitbox = () => ({
+      x: player.x + PLAYER_HITBOX.offsetX,
+      y: player.y + PLAYER_HITBOX.offsetY,
+      width: PLAYER_HITBOX.width,
+      height: PLAYER_HITBOX.height,
+    });
+
+    
     const hasCollision = () => {
+      const playerHitbox = getPlayerHitbox();
+
       const hitBoundary =
-        player.y < 0 ||
-        player.y + player.height > PLAYABLE_HEIGHT;
+        playerHitbox.y < 0 ||
+        playerHitbox.y + playerHitbox.height > PLAYABLE_HEIGHT;
 
       const hitPillar = pillarPairs.some((pillarPair) => {
         const bottomY = pillarPair.topHeight + pillarPair.gapHeight;
         const bottomHeight = PLAYABLE_HEIGHT - bottomY;
 
-        const hitTopPillar = rectanglesOverlap(player, {
+        const hitTopPillar = rectanglesOverlap(playerHitbox, {
           x: pillarPair.x,
           y: 0,
           width: pillarPair.width,
           height: pillarPair.topHeight,
         });
 
-        const hitBottomPillar = rectanglesOverlap(player, {
+        const hitBottomPillar = rectanglesOverlap(playerHitbox, {
           x: pillarPair.x,
           y: bottomY,
           width: pillarPair.width,
