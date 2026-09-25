@@ -773,6 +773,9 @@ export default function SkyboundGame() {
               <p className="mt-2 text-slate-200">
                 Guide Mico through the stone pillars.
               </p>
+              <p className="mt-1 text-sm text-slate-100">
+                Press Space or tap the game to flap.
+              </p>
 
               <button
                 type="button"
@@ -796,6 +799,9 @@ export default function SkyboundGame() {
 
               <p className="mt-3 text-xl text-slate-100">
                 Score: {finalScore}
+              </p>
+              <p className="mt-1 text-slate-200">
+                Best: {bestScore}
               </p>
 
               <button
